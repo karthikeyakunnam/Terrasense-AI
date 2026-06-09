@@ -445,6 +445,29 @@ class FertilizerRecommender:
         n_deficit = max(0.0, target_n - available_n)
         p_deficit = max(0.0, target_p - available_p)
         k_deficit = max(0.0, target_k - available_k)
+        nutrient_balance = {
+            "nitrogen": {
+                "predicted_mg_kg": round(n, 1),
+                "available_kg_ha": round(available_n, 1),
+                "target_kg_ha": round(target_n, 1),
+                "deficit_kg_ha": round(n_deficit, 1),
+                "surplus_kg_ha": round(max(0.0, available_n - target_n), 1),
+            },
+            "phosphorus": {
+                "predicted_mg_kg": round(p, 1),
+                "available_kg_ha": round(available_p, 1),
+                "target_kg_ha": round(target_p, 1),
+                "deficit_kg_ha": round(p_deficit, 1),
+                "surplus_kg_ha": round(max(0.0, available_p - target_p), 1),
+            },
+            "potassium": {
+                "predicted_mg_kg": round(k, 1),
+                "available_kg_ha": round(available_k, 1),
+                "target_kg_ha": round(target_k, 1),
+                "deficit_kg_ha": round(k_deficit, 1),
+                "surplus_kg_ha": round(max(0.0, available_k - target_k), 1),
+            },
+        }
         
         # 3. Fertilizer Formulation
         # DAP (18-46-0) supplies P. DAP rate = P_deficit / 0.46
@@ -596,9 +619,15 @@ class FertilizerRecommender:
             
         if k_deficit > 0:
             reasoning.append(f"Potassium deficit of {k_deficit:.1f} kg/ha is corrected using Muriate of Potash (MOP) applied basal.")
+        else:
+            reasoning.append("Potassium level is sufficient. No potash fertilizer is recommended.")
+
+        fertilizer_required = any(rate > 0 for rate in [urea_rate, dap_rate, mop_rate])
             
         return {
             "crop_name": crop_rules["name"],
+            "fertilizer_required": fertilizer_required,
+            "nutrient_balance": nutrient_balance,
             "fertilizers": {
                 "urea_total_kg_ha": round(urea_rate, 1),
                 "dap_total_kg_ha": round(dap_rate, 1),

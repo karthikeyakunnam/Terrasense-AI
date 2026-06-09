@@ -96,6 +96,11 @@ with col_doses:
     st.markdown("### 📦 Total Required Dosages")
     
     ferts = advisory["fertilizers"]
+    if not advisory.get("fertilizer_required", True):
+        st.success(
+            f"✅ **No supplemental N-P-K fertilizer is required for {advisory['crop_name']}.** "
+            "The calculated soil nutrient stock already meets or exceeds the crop target."
+        )
     
     st.markdown(
         f"""
@@ -119,6 +124,27 @@ with col_doses:
         """,
         unsafe_allow_html=True
     )
+
+    balance_rows = []
+    nutrient_labels = {
+        "nitrogen": "Nitrogen (N)",
+        "phosphorus": "Phosphorus (P)",
+        "potassium": "Potassium (K)",
+    }
+    for key, row in advisory.get("nutrient_balance", {}).items():
+        deficit = row["deficit_kg_ha"]
+        surplus = row["surplus_kg_ha"]
+        balance_rows.append({
+            "Nutrient": nutrient_labels.get(key, key.title()),
+            "Soil Test": f"{row['predicted_mg_kg']} mg/kg",
+            "Available Stock": f"{row['available_kg_ha']} kg/ha",
+            "Crop Target": f"{row['target_kg_ha']} kg/ha",
+            "Status": f"Deficit {deficit} kg/ha" if deficit > 0 else f"Sufficient (+{surplus} kg/ha)",
+        })
+
+    if balance_rows:
+        st.markdown("#### Nutrient Balance Check")
+        st.dataframe(pd.DataFrame(balance_rows), use_container_width=True, hide_index=True)
     
     # Cost Optimization Panel (Feature 3)
     st.markdown("### 💰 Input Cost Optimization")
@@ -161,9 +187,15 @@ with col_doses:
         st.success("✨ **Soil pH is stable.** No pH-corrective soil conditioning is required.")
         
     st.markdown("### 📅 Growth-Stage Split Schedule")
-    df_schedule = pd.DataFrame(advisory["schedule"])
-    df_schedule.columns = ["Crop Stage", "Recommended Fertilizer", "Dosage (kg/ha)", "Timing / Application Notes"]
-    st.table(df_schedule)
+    active_schedule = [item for item in advisory["schedule"] if item["rate_kg_ha"] > 0]
+    if active_schedule:
+        df_schedule = pd.DataFrame(active_schedule)
+        df_schedule.columns = ["Crop Stage", "Recommended Fertilizer", "Dosage (kg/ha)", "Timing / Application Notes"]
+        st.table(df_schedule)
+    else:
+        st.info(
+            "No growth-stage fertilizer applications are scheduled because all calculated N-P-K deficits are zero."
+        )
 
 with col_reasoning:
     # Weather Integration Panel (Feature 6)
@@ -222,8 +254,12 @@ with col_reasoning:
         summary_text += "3. SOIL CONDITIONERS: None required.\n"
         
     summary_text += "4. SPLIT TIMELINE:\n"
-    for item in advisory["schedule"]:
-        summary_text += f"   - {item['stage']}: Apply {item['rate_kg_ha']} kg/ha of {item['fertilizer']}\n"
+    active_summary_schedule = [item for item in advisory["schedule"] if item["rate_kg_ha"] > 0]
+    if active_summary_schedule:
+        for item in active_summary_schedule:
+            summary_text += f"   - {item['stage']}: Apply {item['rate_kg_ha']} kg/ha of {item['fertilizer']}\n"
+    else:
+        summary_text += "   - No fertilizer application required; nutrient stock meets target.\n"
         
     st.text_area("Advisory Clipboard Data:", value=summary_text, height=220)
     st.info("💡 Pro-Tip: Copy the text block above for mobile messaging updates or print summaries for field workers.")

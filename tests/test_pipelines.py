@@ -129,6 +129,30 @@ def test_advanced_features():
     assert "Soil diagnosis" in rec["narrative"]
 
 
+def test_recommender_reports_sufficient_nutrients():
+    """Verifies that zero fertilizer rates are explained by nutrient sufficiency."""
+    config = Config()
+    recommender = FertilizerRecommender(config)
+
+    predictions = {
+        "nitrogen": 100.0,
+        "phosphorus": 80.0,
+        "potassium": 120.0,
+        "ph": 6.5,
+        "soc": 1.2,
+    }
+
+    rec = recommender.calculate_recommendations(predictions, "rice", bulk_density=1.3)
+
+    assert rec["fertilizer_required"] is False
+    assert rec["fertilizers"]["urea_total_kg_ha"] == 0.0
+    assert rec["fertilizers"]["dap_total_kg_ha"] == 0.0
+    assert rec["fertilizers"]["mop_total_kg_ha"] == 0.0
+    assert rec["nutrient_balance"]["nitrogen"]["deficit_kg_ha"] == 0.0
+    assert rec["nutrient_balance"]["phosphorus"]["deficit_kg_ha"] == 0.0
+    assert rec["nutrient_balance"]["potassium"]["deficit_kg_ha"] == 0.0
+
+
 def test_crops_database_extension():
     """Verifies that Chilli, Groundnut, and Tomato are present with water and yield metadata."""
     config = Config()
@@ -179,5 +203,4 @@ def test_soil_lab_report_parser():
     assert res["potassium"] == 145.0
     assert res["ph"] == 6.5
     assert res["soc"] == 1.2
-
 
