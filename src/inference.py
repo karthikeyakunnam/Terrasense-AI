@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, Union, List, Tuple
+from sklearn.ensemble import RandomForestRegressor
 
 from src.config import Config
 from src.logger import setup_logger
@@ -58,19 +59,69 @@ class SoilPredictor:
         else:
             logger.warning("Training metrics JSON not found. Calibrating uncertainty with default parameters.")
             
-        for target in self.targets:
-            target_name = target["name"]
-            best_model_path = self.models_dir / f"{target_name}_best_model.joblib"
-            rf_model_path = self.models_dir / f"{target_name}_rf_model.joblib"
-            
-            if not best_model_path.exists() or not rf_model_path.exists():
-                logger.error(f"Models for target '{target_name}' are missing. Run train.py first.")
-                continue
+        try:
+            for target in self.targets:
+                target_name = target["name"]
+                best_model_path = self.models_dir / f"{target_name}_best_model.joblib"
+                rf_model_path = self.models_dir / f"{target_name}_rf_model.joblib"
                 
-            self.models[target_name] = joblib.load(best_model_path)
-            self.rf_models[target_name] = joblib.load(rf_model_path)
+                if not best_model_path.exists() or not rf_model_path.exists():
+                    raise FileNotFoundError(f"Models for target '{target_name}' are missing.")
+                    
+                self.models[target_name] = joblib.load(best_model_path)
+                self.rf_models[target_name] = joblib.load(rf_model_path)
+        except Exception as exc:
+            logger.warning(
+                "Could not load serialized model files. Falling back to in-memory "
+                f"RandomForest training from processed data. Original error: {exc}"
+            )
+            self.models.clear()
+            self.rf_models.clear()
+            self._fit_fallback_models()
             
         logger.info(f"Loaded predictors for targets: {list(self.models.keys())}")
+
+    def _fit_fallback_models(self) -> None:
+        """Train compact in-memory models when cloud pickle compatibility breaks."""
+        processed_file = Path(self.paths_cfg["processed_data_dir"]) / "aligned_soil_dataset.csv"
+        if not processed_file.exists():
+            raise FileNotFoundError(
+                "Processed dataset is missing and serialized models could not be loaded."
+            )
+
+        df_train = pd.read_csv(processed_file)
+        X = df_train[self.feature_cols]
+        random_state = self.config.training.get("random_state", 42)
+        rf_params = self.config.training.get("models", {}).get("random_forest", {})
+
+        for target in self.targets:
+            target_name = target["name"]
+            target_col = target["column"]
+            if target_col not in df_train.columns:
+                logger.warning(f"Skipping '{target_name}' because '{target_col}' is missing.")
+                continue
+
+            model = RandomForestRegressor(
+                n_estimators=rf_params.get("n_estimators", 100),
+                max_depth=rf_params.get("max_depth", 12),
+                min_samples_split=rf_params.get("min_samples_split", 5),
+                random_state=random_state,
+                n_jobs=-1,
+            )
+            model.fit(X, df_train[target_col])
+            self.models[target_name] = model
+            self.rf_models[target_name] = model
+
+            if target_name not in self.metrics_metadata:
+                self.metrics_metadata[target_name] = {}
+            self.metrics_metadata[target_name]["selected_model"] = "RandomForest fallback"
+            self.metrics_metadata[target_name]["feature_importances"] = dict(
+                sorted(
+                    zip(self.feature_cols, model.feature_importances_.tolist()),
+                    key=lambda item: item[1],
+                    reverse=True,
+                )
+            )
         
     def predict_point(self, features: Dict[str, float]) -> Dict[str, Dict[str, Any]]:
         """Runs predictions, confidence scoring, and intervals for a single coordinate location.
