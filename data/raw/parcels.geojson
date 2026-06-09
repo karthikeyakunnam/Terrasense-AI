@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "parcels",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "parcel_id": "PARCEL_001", "parcel_name": "Northwest Field A", "crop_type": "rice", "area_ha": 1600.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 76.014761372566284, 27.204565687507444 ], [ 76.055144451594558, 27.204267481362873 ], [ 76.054804747259013, 27.168160204044064 ], [ 76.014434664041644, 27.168457950183939 ], [ 76.014761372566284, 27.204565687507444 ] ] ] } },
+{ "type": "Feature", "properties": { "parcel_id": "PARCEL_002", "parcel_name": "Northeast Field B", "crop_type": "wheat", "area_ha": 1600.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 76.065240122929211, 27.204191112428123 ], [ 76.105622403176525, 27.203878367420188 ], [ 76.105266455317846, 27.167771690334373 ], [ 76.064897169777026, 27.16808395291357 ], [ 76.065240122929211, 27.204191112428123 ] ] ] } },
+{ "type": "Feature", "properties": { "parcel_id": "PARCEL_003", "parcel_name": "Southwest Field C", "crop_type": "maize", "area_ha": 1600.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 76.014353082383167, 27.159430986231964 ], [ 76.054719920444654, 27.159133355048208 ], [ 76.054381009853742, 27.12302584048243 ], [ 76.014027137244156, 27.123323012021626 ], [ 76.014353082383167, 27.159430986231964 ] ] ] } },
+{ "type": "Feature", "properties": { "parcel_id": "PARCEL_004", "parcel_name": "Southeast Field D", "crop_type": "cotton", "area_ha": 1600.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 76.064811531707662, 27.159057133357244 ], [ 76.105177572368248, 27.158744991337972 ], [ 76.104822456198917, 27.122638076535278 ], [ 76.064469379889402, 27.122949736503493 ], [ 76.064811531707662, 27.159057133357244 ] ] ] } },
+{ "type": "Feature", "properties": { "parcel_id": "PARCEL_005", "parcel_name": "Central Valley Field E", "crop_type": "rice", "area_ha": 800.0 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 76.039707858798238, 27.172786661678547 ], [ 76.080079171000577, 27.172481598297686 ], [ 76.079905461145316, 27.154428048555001 ], [ 76.039540638982501, 27.154732876419676 ], [ 76.039707858798238, 27.172786661678547 ] ] ] } }
+]
+}

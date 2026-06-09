@@ -1,0 +1,276 @@
+# TerraSense AI Configuration System
+
+paths:
+  raw_data_dir: "data/raw"
+  processed_data_dir: "data/processed"
+  models_dir: "models"
+  logs_dir: "logs"
+  log_file: "logs/terrasense.log"
+
+spatial:
+  crs: "EPSG:32643" # UTM Zone 43N (common for parts of Asia/India, e.g., agricultural areas)
+  extent: # 10km x 10km area boundary coordinates in UTM
+    min_x: 600000
+    min_y: 3000000
+    max_x: 610000
+    max_y: 3010000
+  raster_resolution: 10 # 10m resolution (matching Sentinel-2 high-res bands)
+
+targets:
+  - name: "nitrogen"
+    column: "N_mg_kg"
+    unit: "mg/kg"
+    description: "Soil Available Nitrogen"
+  - name: "phosphorus"
+    column: "P_mg_kg"
+    unit: "mg/kg"
+    description: "Soil Available Phosphorus"
+  - name: "potassium"
+    column: "K_mg_kg"
+    unit: "mg/kg"
+    description: "Soil Available Potassium"
+  - name: "soc"
+    column: "SOC_percent"
+    unit: "%"
+    description: "Soil Organic Carbon"
+  - name: "ph"
+    column: "pH"
+    unit: "pH"
+    description: "Soil pH Level"
+
+features:
+  satellite_bands:
+    - "B02" # Blue
+    - "B03" # Green
+    - "B04" # Red
+    - "B08" # Near Infrared (NIR)
+    - "B11" # Shortwave Infrared 1 (SWIR-1)
+    - "B12" # Shortwave Infrared 2 (SWIR-2)
+  vegetation_indices:
+    - "NDVI"
+    - "EVI"
+    - "NDRE"
+  soilgrids:
+    - "sand"
+    - "clay"
+    - "silt"
+    - "bulk_density"
+
+training:
+  cv_splits: 5
+  random_state: 42
+  test_size: 0.2
+  models:
+    random_forest:
+      n_estimators: 100
+      max_depth: 12
+      min_samples_split: 5
+    gradient_boosting:
+      n_estimators: 100
+      learning_rate: 0.08
+      max_depth: 5
+    xgboost:
+      n_estimators: 100
+      learning_rate: 0.08
+      max_depth: 5
+
+agronomy:
+  crops:
+    rice:
+      name: "Rice"
+      target_n: 120.0 # kg/ha
+      target_p: 60.0  # kg/ha
+      target_k: 60.0  # kg/ha
+      optimal_ph_min: 5.5
+      optimal_ph_max: 6.5
+      optimal_soc_min: 1.2 # %
+      water_requirement_mm: 1200.0
+      yield_range_tons_ha: "4.0 - 6.0"
+      split_schedule:
+        basal: 0.50 # 50% applied at sowing/planting
+        tillering: 0.25 # 25% at active tillering
+        panicle: 0.25 # 25% at panicle initiation
+      growth_stages:
+        - "Basal (Transplanting)"
+        - "Active Tillering"
+        - "Panicle Initiation"
+    wheat:
+      name: "Wheat"
+      target_n: 150.0
+      target_p: 80.0
+      target_k: 40.0
+      optimal_ph_min: 6.0
+      optimal_ph_max: 7.5
+      optimal_soc_min: 1.0
+      water_requirement_mm: 450.0
+      yield_range_tons_ha: "3.5 - 5.0"
+      split_schedule:
+        basal: 0.60
+        tillering: 0.40
+        panicle: 0.00
+      growth_stages:
+        - "Basal (Sowing)"
+        - "Crown Root Initiation (CRI)"
+    maize:
+      name: "Maize"
+      target_n: 180.0
+      target_p: 70.0
+      target_k: 60.0
+      optimal_ph_min: 5.8
+      optimal_ph_max: 7.0
+      optimal_soc_min: 1.2
+      water_requirement_mm: 550.0
+      yield_range_tons_ha: "5.0 - 8.0"
+      split_schedule:
+        basal: 0.40
+        knee_high: 0.30
+        tasseling: 0.30
+      growth_stages:
+        - "Basal (Sowing)"
+        - "Knee-High Stage"
+        - "Tasseling Stage"
+    cotton:
+      name: "Cotton"
+      target_n: 100.0
+      target_p: 50.0
+      target_k: 80.0
+      optimal_ph_min: 5.5
+      optimal_ph_max: 7.5
+      optimal_soc_min: 0.8
+      water_requirement_mm: 700.0
+      yield_range_tons_ha: "2.0 - 4.0"
+      split_schedule:
+        basal: 0.50
+        squaring: 0.25
+        flowering: 0.25
+      growth_stages:
+        - "Basal (Sowing)"
+        - "Squaring Stage"
+        - "Peak Flowering"
+    chilli:
+      name: "Chilli"
+      target_n: 120.0
+      target_p: 60.0
+      target_k: 80.0
+      optimal_ph_min: 6.0
+      optimal_ph_max: 7.0
+      optimal_soc_min: 1.0
+      water_requirement_mm: 700.0
+      yield_range_tons_ha: "1.5 - 2.5"
+      split_schedule:
+        basal: 0.50
+        flowering: 0.50
+      growth_stages:
+        - "Basal (Sowing)"
+        - "Active Flowering"
+    groundnut:
+      name: "Groundnut"
+      target_n: 40.0
+      target_p: 50.0
+      target_k: 50.0
+      optimal_ph_min: 6.0
+      optimal_ph_max: 7.5
+      optimal_soc_min: 0.8
+      water_requirement_mm: 500.0
+      yield_range_tons_ha: "2.0 - 3.5"
+      split_schedule:
+        basal: 0.70
+        pod_development: 0.30
+      growth_stages:
+        - "Basal (Sowing)"
+        - "Pod Development"
+    tomato:
+      name: "Tomato"
+      target_n: 140.0
+      target_p: 80.0
+      target_k: 120.0
+      optimal_ph_min: 6.0
+      optimal_ph_max: 6.8
+      optimal_soc_min: 1.2
+      water_requirement_mm: 600.0
+      yield_range_tons_ha: "20.0 - 40.0"
+      split_schedule:
+        basal: 0.40
+        fruit_development: 0.60
+      growth_stages:
+        - "Basal (Transplanting)"
+        - "Fruit Development"
+    sugarcane:
+      name: "Sugarcane"
+      target_n: 250.0
+      target_p: 80.0
+      target_k: 120.0
+      optimal_ph_min: 6.0
+      optimal_ph_max: 7.5
+      optimal_soc_min: 1.2
+      optimal_temp_min: 20.0
+      optimal_temp_max: 38.0
+      water_requirement_mm: 1500.0
+      yield_range_tons_ha: "60.0 - 100.0"
+      split_schedule:
+        basal: 0.30
+        tillering: 0.40
+        grand_growth: 0.30
+      growth_stages:
+        - "Basal (Planting)"
+        - "Tillering Stage"
+        - "Grand Growth"
+    banana:
+      name: "Banana"
+      target_n: 200.0
+      target_p: 60.0
+      target_k: 300.0
+      optimal_ph_min: 5.5
+      optimal_ph_max: 7.0
+      optimal_soc_min: 1.2
+      optimal_temp_min: 20.0
+      optimal_temp_max: 35.0
+      water_requirement_mm: 1800.0
+      yield_range_tons_ha: "30.0 - 50.0"
+      split_schedule:
+        basal: 0.30
+        shooting: 0.40
+        fruiting: 0.30
+      growth_stages:
+        - "Basal (Planting)"
+        - "Shooting Stage"
+        - "Fruiting Stage"
+
+fertilizers:
+  urea:
+    name: "Urea"
+    n_content: 0.46
+    p_content: 0.00
+    k_content: 0.00
+  dap:
+    name: "Diammonium Phosphate (DAP)"
+    n_content: 0.18
+    p_content: 0.46
+    k_content: 0.00
+  mop:
+    name: "Muriate of Potash (MOP)"
+    n_content: 0.00
+    p_content: 0.00
+    k_content: 0.60
+
+soil_conditioners:
+  lime:
+    name: "Agricultural Lime (CaCO3)"
+    trigger_ph_below: 5.5
+    recommended_rate: 2000 # kg/ha
+    reason: "Raises pH of acidic soils to improve nutrient availability."
+  gypsum:
+    name: "Agricultural Gypsum (CaSO4)"
+    trigger_ph_above: 8.0
+    recommended_rate: 2500 # kg/ha
+    reason: "Supplies calcium and reduces sodium/alkalinity in high pH soils."
+
+prices:
+  urea_cost_per_kg: 6.0    # INR/kg
+  dap_cost_per_kg: 27.0    # INR/kg
+  mop_cost_per_kg: 34.0    # INR/kg
+  precision_eco_discount: 0.15 # 15% reduction in fertilizer rate via Precision Eco-Banding
+
+weather:
+  heavy_rain_threshold_mm: 20.0
+
